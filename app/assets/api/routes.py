@@ -380,6 +380,7 @@ async def update_asset(request: web.Request) -> web.Response:
         return _error_response(500, "INTERNAL", "Unexpected server error.")
     return web.json_response(result.model_dump(mode="json"), status=200)
 
+
 @ROUTES.put(f"/api/assets/{{id:{UUID_RE}}}/preview")
 async def set_asset_preview(request: web.Request) -> web.Response:
     asset_info_id = str(uuid.UUID(request.match_info["id"]))
@@ -406,3 +407,28 @@ async def set_asset_preview(request: web.Request) -> web.Response:
         )
         return _error_response(500, "INTERNAL", "Unexpected server error.")
     return web.json_response(result.model_dump(mode="json"), status=200)
+
+
+@ROUTES.delete(f"/api/assets/{{id:{UUID_RE}}}")
+async def delete_asset(request: web.Request) -> web.Response:
+    asset_info_id = str(uuid.UUID(request.match_info["id"]))
+    delete_content = request.query.get("delete_content")
+    delete_content = True if delete_content is None else delete_content.lower() not in {"0", "false", "no"}
+
+    try:
+        deleted = manager.delete_asset_reference(
+            asset_info_id=asset_info_id,
+            owner_id=USER_MANAGER.get_request_user_id(request),
+            delete_content_if_orphan=delete_content,
+        )
+    except Exception:
+        logging.exception(
+            "delete_asset_reference failed for asset_info_id=%s, owner_id=%s",
+            asset_info_id,
+            USER_MANAGER.get_request_user_id(request),
+        )
+        return _error_response(500, "INTERNAL", "Unexpected server error.")
+
+    if not deleted:
+        return _error_response(404, "ASSET_NOT_FOUND", f"AssetInfo {asset_info_id} not found.")
+    return web.Response(status=204)

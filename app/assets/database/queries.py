@@ -119,7 +119,11 @@ def apply_metadata_filter(
     return stmt
 
 
-def asset_exists_by_hash(session: Session, asset_hash: str) -> bool:
+def asset_exists_by_hash(
+    session: Session,
+    *,
+    asset_hash: str,
+) -> bool:
     """
     Check if an asset with a given hash exists in database.
     """
@@ -131,13 +135,35 @@ def asset_exists_by_hash(session: Session, asset_hash: str) -> bool:
     return row is not None
 
 
-def get_asset_by_hash(session: Session, *, asset_hash: str) -> Asset | None:
+def asset_info_exists_for_asset_id(
+    session: Session,
+    *,
+    asset_id: str,
+) -> bool:
+    q = (
+        select(sa.literal(True))
+        .select_from(AssetInfo)
+        .where(AssetInfo.asset_id == asset_id)
+        .limit(1)
+    )
+    return (session.execute(q)).first() is not None
+
+
+def get_asset_by_hash(
+    session: Session,
+    *,
+    asset_hash: str,
+) -> Asset | None:
     return (
         session.execute(select(Asset).where(Asset.hash == asset_hash).limit(1))
     ).scalars().first()
 
 
-def get_asset_info_by_id(session: Session, asset_info_id: str) -> AssetInfo | None:
+def get_asset_info_by_id(
+    session: Session,
+    *,
+    asset_info_id: str,
+) -> AssetInfo | None:
     return session.get(AssetInfo, asset_info_id)
 
 
@@ -717,6 +743,19 @@ def update_asset_info_full(
     return info
 
 
+def delete_asset_info_by_id(
+    session: Session,
+    *,
+    asset_info_id: str,
+    owner_id: str,
+) -> bool:
+    stmt = sa.delete(AssetInfo).where(
+        AssetInfo.id == asset_info_id,
+        visible_owner_clause(owner_id),
+    )
+    return int((session.execute(stmt)).rowcount or 0) > 0
+
+
 def list_tags_with_usage(
     session: Session,
     prefix: str | None = None,
@@ -810,6 +849,7 @@ def remove_missing_tag_for_asset_id(
             AssetInfoTag.tag_name == "missing",
         )
     )
+
 
 def set_asset_info_preview(
     session: Session,

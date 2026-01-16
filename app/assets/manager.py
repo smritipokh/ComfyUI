@@ -7,6 +7,7 @@ from app.database.db import create_session
 from app.assets.api import schemas_out, schemas_in
 from app.assets.database.queries import (
     asset_exists_by_hash,
+    asset_info_exists_for_asset_id,
     get_asset_by_hash,
     get_asset_info_by_id,
     fetch_asset_info_asset_and_tags,
@@ -14,6 +15,7 @@ from app.assets.database.queries import (
     create_asset_info_for_existing_asset,
     touch_asset_info_by_id,
     update_asset_info_full,
+    delete_asset_info_by_id,
     list_cache_states_by_asset_id,
     list_asset_infos_page,
     list_tags_with_usage,
@@ -23,7 +25,7 @@ from app.assets.database.queries import (
     set_asset_info_preview,
 )
 from app.assets.helpers import resolve_destination_from_tags, ensure_within_base
-
+from app.assets.database.models import Asset
 import app.assets.hashing as hashing
 
 
@@ -356,6 +358,39 @@ def set_asset_preview(
         created_at=info.created_at,
         last_access_time=info.last_access_time,
     )
+
+
+def delete_asset_reference(*, asset_info_id: str, owner_id: str, delete_content_if_orphan: bool = True) -> bool:
+    with create_session() as session:
+        info_row = get_asset_info_by_id(session, asset_info_id=asset_info_id)
+        asset_id = info_row.asset_id if info_row else None
+        deleted = delete_asset_info_by_id(session, asset_info_id=asset_info_id, owner_id=owner_id)
+        if not deleted:
+            session.commit()
+            return False
+
+        if not delete_content_if_orphan or not asset_id:
+            session.commit()
+            return True
+
+        still_exists = asset_info_exists_for_asset_id(session, asset_id=asset_id)
+        if still_exists:
+            session.commit()
+            return True
+
+        states = list_cache_states_by_asset_id(session, asset_id=asset_id)
+        file_paths = [s.file_path for s in (states or []) if getattr(s, "file_path", None)]
+
+        asset_row = session.get(Asset, asset_id)
+        if asset_row is not None:
+            session.delete(asset_row)
+
+        session.commit()
+        for p in file_paths:
+            with contextlib.suppress(Exception):
+                if p and os.path.isfile(p):
+                    os.remove(p)
+    return True
 
 
 def create_asset_from_hash(
