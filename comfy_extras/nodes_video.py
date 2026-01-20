@@ -193,7 +193,12 @@ class SaveVideo(io.ComfyNode):
             resolved_format = Types.VideoContainer.AUTO
             resolved_codec = Types.VideoCodec.AUTO
 
-        speed = Types.VideoSpeedPreset(speed_str) if speed_str else None
+        speed = None
+        if speed_str:
+            try:
+                speed = Types.VideoSpeedPreset(speed_str)
+            except (ValueError, TypeError):
+                logging.warning(f"Invalid speed preset '{speed_str}', using default")
 
         width, height = video.get_dimensions()
         full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path(
