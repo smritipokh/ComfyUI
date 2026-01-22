@@ -40,6 +40,7 @@ from app.user_manager import UserManager
 from app.model_manager import ModelFileManager
 from app.custom_node_manager import CustomNodeManager
 from app.subgraph_manager import SubgraphManager
+from app.node_replace_manager import NodeReplaceManager
 from typing import Optional, Union
 from api_server.routes.internal.internal_routes import InternalRoutes
 from protocol import BinaryEventTypes
@@ -204,6 +205,7 @@ class PromptServer():
         self.model_file_manager = ModelFileManager()
         self.custom_node_manager = CustomNodeManager()
         self.subgraph_manager = SubgraphManager()
+        self.node_replace_manager = NodeReplaceManager()
         self.internal_routes = InternalRoutes(self)
         self.supports = ["custom_nodes_from_web"]
         self.prompt_queue = execution.PromptQueue(self)
@@ -992,6 +994,7 @@ class PromptServer():
         self.model_file_manager.add_routes(self.routes)
         self.custom_node_manager.add_routes(self.routes, self.app, nodes.LOADED_MODULE_DIRS.items())
         self.subgraph_manager.add_routes(self.routes, nodes.LOADED_MODULE_DIRS.items())
+        self.node_replace_manager.add_routes(self.routes)
         self.app.add_subapp('/internal', self.internal_routes.get_app())
 
         # Prefix every route with /api for easier matching for delegation.

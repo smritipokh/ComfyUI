@@ -1,6 +1,13 @@
 from __future__ import annotations
 
 from typing import Any
+import app.node_replace_manager
+
+def register_node_replacement(node_replace: NodeReplace):
+    """
+    Register node replacement.
+    """
+    app.node_replace_manager.register_node_replacement(node_replace)
 
 
 class NodeReplace:
@@ -12,8 +19,8 @@ class NodeReplace:
     def __init__(self,
         new_node_id: str,
         old_node_id: str,
-        input_mapping: list[InputMap],
-        output_mapping: list[OutputMap],
+        input_mapping: list[InputMap] | None=None,
+        output_mapping: list[OutputMap] | None=None,
     ):
         self.new_node_id = new_node_id
         self.old_node_id = old_node_id
@@ -27,8 +34,8 @@ class NodeReplace:
         return {
             "new_node_id": self.new_node_id,
             "old_node_id": self.old_node_id,
-            "input_mapping": [m.as_dict() for m in self.input_mapping],
-            "output_mapping": [m.as_dict() for m in self.output_mapping],
+            "input_mapping": [m.as_dict() for m in self.input_mapping] if self.input_mapping else None,
+            "output_mapping": [m.as_dict() for m in self.output_mapping] if self.output_mapping else None,
         }
 
 
