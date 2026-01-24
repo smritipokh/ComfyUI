@@ -1344,7 +1344,8 @@ class Schema:
     """The category of the node, as per the "Add Node" menu."""
     inputs: list[Input] = field(default_factory=list)
     outputs: list[Output] = field(default_factory=list)
-    hidden: list[Hidden] = field(default_factory=list)
+    hidden: list[Hidden | str] = field(default_factory=list)
+    """Hidden inputs. Use Hidden enum for system values (PROMPT, UNIQUE_ID, etc.) or plain strings for custom frontend-provided values."""
     description: str=""
     """Node description, shown as a tooltip when hovering over the node."""
     search_aliases: list[str] = field(default_factory=list)
@@ -1443,7 +1444,10 @@ class Schema:
         input = create_input_dict_v1(self.inputs)
         if self.hidden:
             for hidden in self.hidden:
-                input.setdefault("hidden", {})[hidden.name] = (hidden.value,)
+                if isinstance(hidden, str):
+                    input.setdefault("hidden", {})[hidden] = (hidden,)
+                else:
+                    input.setdefault("hidden", {})[hidden.name] = (hidden.value,)
         # create separate lists from output fields
         output = []
         output_is_list = []
@@ -1504,7 +1508,10 @@ class Schema:
                 add_to_dict_v3(output, output_dict)
         if self.hidden:
             for hidden in self.hidden:
-                hidden_list.append(hidden.value)
+                if isinstance(hidden, str):
+                    hidden_list.append(hidden)
+                else:
+                    hidden_list.append(hidden.value)
 
         info = NodeInfoV3(
             input=input_dict,

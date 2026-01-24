@@ -104,7 +104,11 @@ class CustomComboNode(io.ComfyNode):
             category="utils",
             is_experimental=True,
             inputs=[io.Combo.Input("choice", options=[])],
-            outputs=[io.String.Output()]
+            outputs=[
+                io.String.Output(display_name="STRING"),
+                io.Int.Output(display_name="INDEX"),
+            ],
+            hidden=["index"],
         )
 
     @classmethod
@@ -115,8 +119,8 @@ class CustomComboNode(io.ComfyNode):
         return True
 
     @classmethod
-    def execute(cls, choice: io.Combo.Type) -> io.NodeOutput:
-        return io.NodeOutput(choice)
+    def execute(cls, choice: io.Combo.Type, index: int = 0) -> io.NodeOutput:
+        return io.NodeOutput(choice, index)
 
 
 class DCTestNode(io.ComfyNode):

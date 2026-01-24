@@ -192,6 +192,11 @@ def get_input_data(inputs, class_def, unique_id, execution_list=None, dynprompt=
                 hidden_inputs_v3[io.Hidden.auth_token_comfy_org] = extra_data.get("auth_token_comfy_org", None)
             if io.Hidden.api_key_comfy_org.name in hidden:
                 hidden_inputs_v3[io.Hidden.api_key_comfy_org] = extra_data.get("api_key_comfy_org", None)
+            # Handle custom hidden inputs from prompt data
+            system_hidden_names = {h.name for h in io.Hidden}
+            for hidden_name in hidden:
+                if hidden_name not in system_hidden_names and hidden_name in inputs:
+                    input_data_all[hidden_name] = [inputs[hidden_name]]
     else:
         if "hidden" in valid_inputs:
             h = valid_inputs["hidden"]
