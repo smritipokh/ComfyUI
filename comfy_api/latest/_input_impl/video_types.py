@@ -243,8 +243,8 @@ class VideoFromFile(VideoInput):
         audio = None
         container.seek(start_pts, stream=video_stream)
         # Use last stream for consistency
-        audio_stream = container.streams.audio[-1]
-        if audio_stream:
+        if len(container.streams.audio):
+            audio_stream = container.streams.audio[-1]
             audio_frames = []
             resample = av.audio.resampler.AudioResampler(format='fltp').resample
             frames = itertools.chain.from_iterable(
