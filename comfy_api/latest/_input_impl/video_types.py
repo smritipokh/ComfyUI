@@ -120,7 +120,12 @@ class VideoFromFile(VideoInput):
             if video_stream and video_stream.average_rate:
                 frame_count = 0
                 container.seek(0)
-                for packet in container.demux(video_stream):
+                frame_iterator = (
+                    container.decode(video_stream)
+                    if video_stream.codec.capabilities & 0x100
+                    else container.demux(video_stream)
+                )
+                for packet in frame_iterator:
                     for _ in packet.decode():
                         frame_count += 1
                 if frame_count > 0:
@@ -165,7 +170,11 @@ class VideoFromFile(VideoInput):
             frame_count = 1
             start_pts = int(self.__start_time / video_stream.time_base)
             container.seek(start_pts, stream=video_stream)
-            frame_iterator = container.decode(video_stream)
+            frame_iterator = (
+                container.decode(video_stream)
+                if video_stream.codec.capabilities & 0x100
+                else container.demux(video_stream)
+            )
             for frame in frame_iterator:
                 if frame.pts >= start_pts:
                     break
