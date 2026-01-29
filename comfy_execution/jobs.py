@@ -20,10 +20,27 @@ class JobStatus:
 
 
 # Media types that can be previewed in the frontend
-PREVIEWABLE_MEDIA_TYPES = frozenset({'images', 'video', 'audio'})
+PREVIEWABLE_MEDIA_TYPES = frozenset({'images', 'video', 'audio', 'text'})
 
 # 3D file extensions for preview fallback (no dedicated media_type exists)
 THREE_D_EXTENSIONS = frozenset({'.obj', '.fbx', '.gltf', '.glb'})
+
+# Text preview truncation limit (1024 characters) to prevent preview_output bloat
+TEXT_PREVIEW_MAX_LENGTH = 1024
+
+
+def _create_text_preview(value: str) -> dict:
+    """Create a text preview dict with optional truncation.
+
+    Returns:
+        dict with 'content' and optionally 'truncated' flag
+    """
+    if len(value) <= TEXT_PREVIEW_MAX_LENGTH:
+        return {'content': value}
+    return {
+        'content': value[:TEXT_PREVIEW_MAX_LENGTH],
+        'truncated': True
+    }
 
 
 def _extract_job_metadata(extra_data: dict) -> tuple[Optional[int], Optional[str]]:
@@ -171,9 +188,24 @@ def get_outputs_summary(outputs: dict) -> tuple[int, Optional[dict]]:
                 continue
 
             for item in items:
-                if not isinstance(item, dict):
-                    continue
                 count += 1
+
+                if not isinstance(item, dict):
+                    # Handle text outputs (non-dict items like strings or tuples)
+                    if preview_output is None and media_type == 'text':
+                        if isinstance(item, tuple):
+                            text_value = item[0] if item else ''
+                        else:
+                            text_value = str(item)
+                        text_preview = _create_text_preview(text_value)
+                        enriched = {
+                            **text_preview,
+                            'nodeId': node_id,
+                            'mediaType': media_type
+                        }
+                        if fallback_preview is None:
+                            fallback_preview = enriched
+                    continue
 
                 if preview_output is None and is_previewable(media_type, item):
                     enriched = {
