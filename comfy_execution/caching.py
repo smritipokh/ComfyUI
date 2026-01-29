@@ -250,7 +250,7 @@ class BasicCache:
             cache_key=cache_key,
             cache_key_bytes=serialize_cache_key(cache_key)
         )
-        cache_value = CacheValue(outputs=value.outputs)
+        cache_value = CacheValue(outputs=value.outputs, ui=value.ui)
 
         for provider in get_cache_providers():
             try:
@@ -296,7 +296,7 @@ class BasicCache:
                         continue
                     # Import CacheEntry here to avoid circular import at module level
                     from execution import CacheEntry
-                    return CacheEntry(ui={}, outputs=list(result.outputs))
+                    return CacheEntry(ui=result.ui or {}, outputs=list(result.outputs))
             except Exception as e:
                 logger.warning(f"Cache provider {provider.__class__.__name__} error on lookup: {e}")
 

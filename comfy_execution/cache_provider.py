@@ -56,10 +56,11 @@ class CacheValue:
     """
     Value stored/retrieved from external cache.
 
-    Note: UI data is intentionally excluded - it contains pod-local
-    file paths that aren't portable across instances.
+    The ui field is optional - implementations may choose to skip it
+    (e.g., if it contains non-portable data like local file paths).
     """
     outputs: list  # The tensor/value outputs
+    ui: dict = None  # Optional UI data (may be skipped by implementations)
 
 
 # ============================================================
