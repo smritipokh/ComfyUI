@@ -1,12 +1,5 @@
 import os
 
-from comfy.cli_args import args
-
-if args.cpu:
-    os.environ.setdefault("PYOPENGL_PLATFORM", "osmesa")
-elif not os.environ.get("DISPLAY") and not os.environ.get("WAYLAND_DISPLAY"):
-    os.environ.setdefault("PYOPENGL_PLATFORM", "egl")
-
 import re
 import logging
 from typing import TypedDict
@@ -30,29 +23,14 @@ except ImportError as e:
         "Install with: pip install PyOpenGL PyOpenGL-accelerate glfw"
     ) from e
 except AttributeError as e:
-    # This happens when PyOpenGL can't load the requested platform (e.g., OSMesa not installed)
-    platform = os.environ.get("PYOPENGL_PLATFORM", "default")
-    if platform == "osmesa":
-        raise RuntimeError(
-            "OSMesa (software rendering) requested but not installed.\n"
-            "OSMesa is required for --cpu mode.\n\n"
-            "Install OSMesa:\n"
-            "  e.g. Ubuntu/Debian: sudo apt install libosmesa6-dev\n"
-            "Or disable CPU mode to use hardware rendering."
-        ) from e
-    elif platform == "egl":
-        raise RuntimeError(
-            "EGL (headless rendering) requested but not available.\n"
-            "EGL is used for headless GPU rendering without a display.\n\n"
-            "Install EGL:\n"
-            "  e.g. Ubuntu/Debian: sudo apt install libegl1-mesa-dev libgles2-mesa-dev\n"
-            "Or set DISPLAY/WAYLAND_DISPLAY environment variable if you have a display."
-        ) from e
-    else:
-        raise RuntimeError(
-            f"OpenGL initialization failed (platform: {platform}).\n"
-            "Ensure OpenGL drivers are installed and working."
-        ) from e
+    # This happens when PyOpenGL can't initialize (e.g., no display, missing libraries)
+    raise RuntimeError(
+        "OpenGL initialization failed.\n"
+        "Ensure OpenGL drivers are installed and a display is available.\n\n"
+        "For headless servers, you may need:\n"
+        "  - EGL: sudo apt install libegl1-mesa-dev\n"
+        "  - Or a virtual display: Xvfb :99 & export DISPLAY=:99"
+    ) from e
 
 
 class SizeModeInput(TypedDict):
