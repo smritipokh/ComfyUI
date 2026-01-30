@@ -10,7 +10,7 @@ class Mahiro(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="Mahiro",
-            display_name="Mahiro CFG",
+            display_name="Similarity-Adaptive Guidance",
             category="_for_testing",
             description="Modify the guidance to scale more on the 'direction' of the positive prompt rather than the difference between the negative prompt.",
             inputs=[
