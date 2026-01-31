@@ -232,6 +232,11 @@ class VideoSlice(io.ComfyNode):
                     step=0.001,
                     tooltip="Duration in seconds, or 0 for unlimited duration",
                 ),
+                io.Boolean.Input(
+                    "strict_duration",
+                    default=False,
+                    tooltip="If True, when the specified duration is not possible, an error will be raised.",
+                ),
             ],
             outputs=[
                 io.Video.Output(),
@@ -239,8 +244,8 @@ class VideoSlice(io.ComfyNode):
         )
 
     @classmethod
-    def execute(cls, video, start_time, duration) -> io.NodeOutput:
-        trimmed = video.as_trimmed(start_time, duration, strict_duration=False)
+    def execute(cls, video: io.Video.Type, start_time: float, duration: float, strict_duration: bool) -> io.NodeOutput:
+        trimmed = video.as_trimmed(start_time, duration, strict_duration=strict_duration)
         if trimmed is not None:
             return io.NodeOutput(trimmed)
         raise ValueError(
